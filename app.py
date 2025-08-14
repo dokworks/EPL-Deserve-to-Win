@@ -139,7 +139,7 @@ def get_available_matchweeks(matches):
     return sorted(matchweeks, reverse=True)  # Most recent first
 
 def format_match_display(match):
-    """Format a single match for display using Streamlit columns only, with smaller fonts and centered score, and kickoff date/time"""
+    """Format a single match for display using Streamlit columns only, with smaller fonts and centered score"""
     home_team = match["homeTeam"]
     away_team = match["awayTeam"]
     kickoff_utc = datetime.strptime(match["kickoff"], "%Y-%m-%d %H:%M:%S")
@@ -159,16 +159,14 @@ def format_match_display(match):
                     f"<img src='{home_logo_url}' width='22' height='22' style='margin-right: 4px;'>"
                     f"</div>", unsafe_allow_html=True)
     with cols[1]:
-        st.markdown(f"<div style='text-align: center; font-size: 13px; color: #555; margin-bottom: 2px;'>{formatted_date}</div>", unsafe_allow_html=True)
         st.markdown(f"<div style='text-align: center; font-size: 16px; font-weight: 600;'>{score_text}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div style='text-align: center; font-size: 12px; color: #888; margin-top: 2px;'>{formatted_time}</div>", unsafe_allow_html=True)
     with cols[2]:
         st.markdown(f"<div style='display: flex; align-items: center;'>"
                     f"<img src='{away_logo_url}' width='22' height='22' style='margin-right: 4px;'>"
                     f"<span style='font-weight: 500; font-size: 13px;'>{away_team['name']}</span>"
                     f"</div>", unsafe_allow_html=True)
     st.markdown(f"<div style='text-align: center; margin-top: 2px; color: gray; font-size: 11px;'>"
-                f"{match['ground']} • {match['period']}"
+                f"{formatted_date} • {formatted_time} • {match['ground']} • {match['period']}"
                 f"</div>", unsafe_allow_html=True)
 
 def main():
