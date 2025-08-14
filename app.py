@@ -83,35 +83,6 @@ def fetch_matches(season):
         st.error(f"Error fetching data: {e}")
         return []
 
-def get_teams_from_matches(matches):
-    """Extract unique teams from matches"""
-    teams = {}
-    for match in matches:
-        home_team = match["homeTeam"]
-        away_team = match["awayTeam"]
-        
-        teams[home_team["id"]] = {
-            "name": home_team["name"],
-            "shortName": home_team["shortName"],
-            "id": home_team["id"]
-        }
-        teams[away_team["id"]] = {
-            "name": away_team["name"],
-            "shortName": away_team["shortName"],
-            "id": away_team["id"]
-        }
-    
-    return sorted(teams.values(), key=lambda x: x["name"])
-
-def filter_matches_by_team(matches, team_id):
-    """Filter matches to only include games for a specific team"""
-    if team_id == "all":
-        return matches
-    
-    return [match for match in matches if 
-            match["homeTeam"]["id"] == team_id or 
-            match["awayTeam"]["id"] == team_id]
-
 def get_available_matchweeks(matches):
     """Get all available matchweeks from matches"""
     matchweeks = set()
@@ -213,70 +184,8 @@ def main():
         st.error("No matches found or unable to fetch data.")
         return
     
-    # Get teams for dropdown
-    teams = get_teams_from_matches(matches)
-    
-    # Create team options for selectbox
-    team_options = ["All Teams"] + [f"{team['name']}" for team in teams]
-    team_ids = ["all"] + [team["id"] for team in teams]
-    
-    # Team selector with custom formatting
-    st.subheader("Select Team")
-    
-    # Option 1: Regular selectbox with icon display
-    col1, col2 = st.columns([1, 2])
-    
-    with col1:
-        selected_team_index = st.selectbox(
-            "Choose from dropdown:",
-            range(len(team_options)),
-            format_func=lambda x: team_options[x],
-            index=0
-        )
-    
-    # Display selected team with icon (if not "All Teams")
-    if selected_team_index > 0:
-        selected_team = teams[selected_team_index - 1]
-        with col2:
-            st.markdown(f"""
-            <div style="display: flex; align-items: center; margin-top: 25px;">
-                <img src="https://resources.premierleague.com/premierleague25/badges/{selected_team['id']}.svg" 
-                     width="40" height="40" style="margin-right: 15px;">
-                <span style="font-size: 18px; font-weight: bold;">{selected_team['name']}</span>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    # Option 2: Visual team grid (alternative selector)
-    st.markdown("**Or click on a team badge:**")
-    
-    # Create a grid of team badges
-    cols_per_row = 6
-    team_rows = [teams[i:i + cols_per_row] for i in range(0, len(teams), cols_per_row)]
-    
-    # Add "All Teams" option
-    if st.button("🏆 All Teams", key="all_teams_btn"):
-        selected_team_index = 0
-    
-    for row in team_rows:
-        cols = st.columns(cols_per_row)
-        for i, team in enumerate(row):
-            with cols[i]:
-                if st.button(f"![{team['shortName']}](https://resources.premierleague.com/premierleague25/badges/{team['id']}.svg)", 
-                           key=f"team_{team['id']}", 
-                           help=team['name']):
-                    selected_team_index = teams.index(team) + 1
-    
-    selected_team_id = team_ids[selected_team_index]
-    
-    # Filter matches by selected team
-    filtered_matches = filter_matches_by_team(matches, selected_team_id)
-    
-    if not filtered_matches:
-        st.warning("No completed matches found for the selected team.")
-        return
-    
     # Get available matchweeks
-    available_matchweeks = get_available_matchweeks(filtered_matches)
+    available_matchweeks = get_available_matchweeks(matches)
     
     # Initialize session state for current matchweek
     if 'current_matchweek' not in st.session_state:
@@ -290,7 +199,7 @@ def main():
     current_index = available_matchweeks.index(current_matchweek)
     
     # Get matches for current matchweek
-    current_week_matches = [match for match in filtered_matches if match["matchWeek"] == current_matchweek]
+    current_week_matches = [match for match in matches if match["matchWeek"] == current_matchweek]
     
     # Get date range for the matchweek
     dates = [datetime.strptime(match["kickoff"], "%Y-%m-%d %H:%M:%S") for match in current_week_matches]
@@ -310,17 +219,16 @@ def main():
             st.markdown("<div style='text-align: center; color: #ccc; font-size: 24px;'>◀</div>", unsafe_allow_html=True)
     
     with col2:
-        # Matchweek header - thinner and blue
+        # Matchweek header - back to original style with green gradient
         st.markdown(f"""
-        <div style="background: linear-gradient(90deg, #1f4e79, #4a90e2); 
+        <div style="background: linear-gradient(90deg, #37003c, #00ff87); 
                     color: white; 
-                    padding: 8px 15px; 
-                    border-radius: 5px; 
-                    margin: 10px 0;
-                    text-align: center;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h3 style="margin: 0; font-size: 20px;">Matchweek {current_matchweek}</h3>
-            <p style="margin: 2px 0 0 0; font-size: 12px; opacity: 0.9;">{min_date} - {max_date}</p>
+                    padding: 15px; 
+                    border-radius: 10px; 
+                    margin: 20px 0 10px 0;
+                    text-align: center;">
+            <h2 style="margin: 0; font-size: 24px;">Matchweek {current_matchweek}</h2>
+            <p style="margin: 5px 0 0 0; font-size: 14px;">{min_date} - {max_date}</p>
         </div>
         """, unsafe_allow_html=True)
     
