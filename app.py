@@ -150,7 +150,7 @@ def fetch_match_stats(match_id):
         return None
 
 def show_match_stats(match):
-    match_id = match["id"]
+    match_id = match.get("matchId")
     stats_data = fetch_match_stats(match_id)
     if not stats_data:
         st.error("No stats available for this match.")
@@ -329,7 +329,8 @@ def main():
     # Display each match
     for match in current_week_matches:
         format_match_display(match)
-        if st.button(f"View Stats", key=f"stats_{match['id']}"):
+        match_id = match.get("matchId")
+        if st.button(f"View Stats", key=f"stats_{match_id}"):
             st.session_state.selected_match = match
             st.session_state.show_stats = True
             st.rerun()
