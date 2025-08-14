@@ -206,40 +206,62 @@ def main():
     min_date = min(dates).strftime("%d %b")
     max_date = max(dates).strftime("%d %b")
     
-    # Matchweek navigation header
-    col1, col2, col3 = st.columns([1, 3, 1])
+    # Matchweek navigation header - full width with inline buttons
+    st.markdown(f"""
+    <div style="background: #87CEEB; 
+                color: #333; 
+                padding: 8px 0; 
+                border-radius: 5px; 
+                margin: 10px 0;
+                text-align: center;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+            <span style="font-size: 20px; color: {'#666' if current_index >= len(available_matchweeks) - 1 else '#333'}; cursor: {'default' if current_index >= len(available_matchweeks) - 1 else 'pointer'};">◀</span>
+            <div>
+                <h3 style="margin: 0; font-size: 18px; font-weight: bold;">Matchweek {current_matchweek}</h3>
+                <p style="margin: 0; font-size: 11px; opacity: 0.8;">{min_date} - {max_date}</p>
+            </div>
+            <span style="font-size: 20px; color: {'#666' if current_index <= 0 else '#333'}; cursor: {'default' if current_index <= 0 else 'pointer'};">▶</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     
-    with col1:
-        # Left arrow (previous matchweek - lower number)
+    # Navigation buttons in columns positioned over the header
+    col1, col2, col3, col4, col5 = st.columns([2, 1, 2, 1, 2])
+    
+    with col2:
         if current_index < len(available_matchweeks) - 1:
             if st.button("◀", key="prev_week", help="Previous matchweek"):
                 st.session_state.current_matchweek = available_matchweeks[current_index + 1]
                 st.rerun()
-        else:
-            st.markdown("<div style='text-align: center; color: #ccc; font-size: 24px;'>◀</div>", unsafe_allow_html=True)
     
-    with col2:
-        # Matchweek header - back to original style with green gradient
-        st.markdown(f"""
-        <div style="background: linear-gradient(90deg, #37003c, #00ff87); 
-                    color: white; 
-                    padding: 15px; 
-                    border-radius: 10px; 
-                    margin: 20px 0 10px 0;
-                    text-align: center;">
-            <h2 style="margin: 0; font-size: 24px;">Matchweek {current_matchweek}</h2>
-            <p style="margin: 5px 0 0 0; font-size: 14px;">{min_date} - {max_date}</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        # Right arrow (next matchweek - higher number)
+    with col4:
         if current_index > 0:
             if st.button("▶", key="next_week", help="Next matchweek"):
                 st.session_state.current_matchweek = available_matchweeks[current_index - 1]
                 st.rerun()
-        else:
-            st.markdown("<div style='text-align: center; color: #ccc; font-size: 24px;'>▶</div>", unsafe_allow_html=True)
+    
+    # Custom CSS to position buttons over the header
+    st.markdown("""
+    <style>
+    div[data-testid="column"]:nth-child(2) button,
+    div[data-testid="column"]:nth-child(4) button {
+        background: transparent !important;
+        border: none !important;
+        color: #333 !important;
+        font-size: 20px !important;
+        padding: 5px 10px !important;
+        margin-top: -60px !important;
+        position: relative !important;
+        z-index: 10 !important;
+    }
+    div[data-testid="column"]:nth-child(2) button:hover,
+    div[data-testid="column"]:nth-child(4) button:hover {
+        background: rgba(255,255,255,0.2) !important;
+        border-radius: 3px !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
     
     # Sort matches within the week by kickoff time
     current_week_matches.sort(key=lambda x: x["kickoff"])
