@@ -13,15 +13,29 @@ st.set_page_config(
 )
 
 # Title
-st.title("⚽ Premier League 2024 Season Matches")
+st.title("⚽ Premier League Matches")
+
+def get_available_seasons():
+    """Get available seasons including current year if after Aug 1"""
+    current_date = datetime.now()
+    current_year = current_date.year
+    
+    # Start with base seasons
+    seasons = ["2024"]
+    
+    # Add current year if we're past August 1st
+    if current_date.month >= 8 and str(current_year) not in seasons:
+        seasons.append(str(current_year))
+    
+    return sorted(seasons, reverse=True)  # Most recent first
 
 @st.cache_data
-def fetch_matches():
+def fetch_matches(season):
     """Fetch Premier League matches from the API"""
     url = "https://sdp-prem-prod.premier-league-prod.pulselive.com/api/v2/matches"
     params = {
         "competition": "8",
-        "season": "2024",
+        "season": season,
         "_limit": "400"  # Increased limit to get more matches
     }
     
@@ -112,9 +126,17 @@ def format_match_display(match):
     """, unsafe_allow_html=True)
 
 def main():
+    # Season selector
+    available_seasons = get_available_seasons()
+    selected_season = st.selectbox(
+        "Select Season:",
+        options=available_seasons,
+        index=0  # Default to most recent season
+    )
+    
     # Fetch matches
-    with st.spinner("Fetching Premier League matches..."):
-        matches = fetch_matches()
+    with st.spinner(f"Fetching Premier League {selected_season} season matches..."):
+        matches = fetch_matches(selected_season)
     
     if not matches:
         st.error("No matches found or unable to fetch data.")
@@ -132,8 +154,8 @@ def main():
     for match in completed_matches:
         matches_by_week[match["matchWeek"]].append(match)
     
-    # Sort matchweeks in descending order (most current first)
-    sorted_weeks = sorted(matches_by_week.keys(), reverse=True)
+    # Sort matchweeks in ascending order (chronological order)
+    sorted_weeks = sorted(matches_by_week.keys())
     
     # Display matches by matchweek
     for week in sorted_weeks:
