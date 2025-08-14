@@ -15,7 +15,7 @@ st.set_page_config(
 # Title
 st.title("⚽ Premier League Matches")
 
-# Custom CSS for better styling
+# Custom CSS for better styling and mobile responsiveness
 st.markdown("""
 <style>
 .team-selector {
@@ -44,6 +44,54 @@ st.markdown("""
 }
 .team-option img {
     margin-right: 8px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .main > div {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+    
+    /* Responsive match display */
+    .match-container {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        padding: 10px !important;
+        margin: 5px 0 !important;
+    }
+    
+    .match-row {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 100% !important;
+        margin: 5px 0 !important;
+    }
+    
+    .team-name {
+        font-size: 14px !important;
+        margin: 0 8px !important;
+    }
+    
+    .score {
+        font-size: 18px !important;
+        font-weight: bold !important;
+        margin: 0 8px !important;
+    }
+    
+    .match-info {
+        font-size: 10px !important;
+        margin-top: 5px !important;
+    }
+}
+
+/* Center everything */
+.stApp > div:first-child {
+    max-width: 1000px;
+    margin: 0 auto;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -110,47 +158,38 @@ def format_match_display(match):
     home_logo_url = f"https://resources.premierleague.com/premierleague25/badges/{home_team['id']}.svg"
     away_logo_url = f"https://resources.premierleague.com/premierleague25/badges/{away_team['id']}.svg"
     
-    # Create columns for the match display
-    col1, col2, col3, col4, col5 = st.columns([2, 1, 1, 1, 2])
-    
-    with col1:
-        st.markdown(f"""
-        <div style="display: flex; align-items: center; justify-content: flex-end;">
-            <span style="margin-right: 10px; font-weight: bold;">{home_team['name']}</span>
-            <img src="{home_logo_url}" width="30" height="30" style="margin-right: 5px;">
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        if match["period"] == "FullTime":
-            st.markdown(f"<div style='text-align: center; font-size: 24px; font-weight: bold;'>{home_team['score']}</div>", unsafe_allow_html=True)
-        else:
-            st.markdown("<div style='text-align: center;'>-</div>", unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown("<div style='text-align: center; font-size: 20px;'>-</div>", unsafe_allow_html=True)
-    
-    with col4:
-        if match["period"] == "FullTime":
-            st.markdown(f"<div style='text-align: center; font-size: 24px; font-weight: bold;'>{away_team['score']}</div>", unsafe_allow_html=True)
-        else:
-            st.markdown("<div style='text-align: center;'>-</div>", unsafe_allow_html=True)
-    
-    with col5:
-        st.markdown(f"""
-        <div style="display: flex; align-items: center;">
-            <img src="{away_logo_url}" width="30" height="30" style="margin-right: 10px;">
-            <span style="font-weight: bold;">{away_team['name']}</span>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Additional match info with JavaScript for local time conversion
+    # Mobile-responsive match display
     st.markdown(f"""
-    <div style="text-align: center; margin-top: 5px; color: gray; font-size: 12px;">
-        <span id="date-{match['matchId']}">{formatted_date}</span> • 
-        <span id="time-{match['matchId']}">{formatted_time}</span> • 
-        {match['ground']} • {match['period']}
+    <div class="match-container" style="background: #f8f9fa; border-radius: 8px; padding: 15px; margin: 10px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <div class="match-row" style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; margin: 5px;">
+                <span class="team-name" style="margin-right: 8px; font-weight: bold; text-align: right; min-width: 120px;">{home_team['name']}</span>
+                <img src="{home_logo_url}" width="25" height="25" style="margin: 0 5px;">
+            </div>
+            
+            <div style="display: flex; align-items: center; margin: 5px 15px;">
+                <span class="score" style="font-size: 20px; font-weight: bold; margin: 0 8px;">
+                    {home_team['score'] if match["period"] == "FullTime" else '-'}
+                </span>
+                <span style="font-size: 16px; margin: 0 5px;">-</span>
+                <span class="score" style="font-size: 20px; font-weight: bold; margin: 0 8px;">
+                    {away_team['score'] if match["period"] == "FullTime" else '-'}
+                </span>
+            </div>
+            
+            <div style="display: flex; align-items: center; margin: 5px;">
+                <img src="{away_logo_url}" width="25" height="25" style="margin: 0 5px;">
+                <span class="team-name" style="margin-left: 8px; font-weight: bold; text-align: left; min-width: 120px;">{away_team['name']}</span>
+            </div>
+        </div>
+        
+        <div class="match-info" style="text-align: center; margin-top: 8px; color: gray; font-size: 11px;">
+            <span id="date-{match['matchId']}">{formatted_date}</span> • 
+            <span id="time-{match['matchId']}">{formatted_time}</span> • 
+            {match['ground']} • {match['period']}
+        </div>
     </div>
+    
     <script>
         (function() {{
             var isoTime = "{iso_time}";
@@ -206,62 +245,38 @@ def main():
     min_date = min(dates).strftime("%d %b")
     max_date = max(dates).strftime("%d %b")
     
-    # Matchweek navigation header - full width with inline buttons
-    st.markdown(f"""
-    <div style="background: #87CEEB; 
-                color: #333; 
-                padding: 8px 0; 
-                border-radius: 5px; 
-                margin: 10px 0;
-                text-align: center;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
-            <span style="font-size: 20px; color: {'#666' if current_index >= len(available_matchweeks) - 1 else '#333'}; cursor: {'default' if current_index >= len(available_matchweeks) - 1 else 'pointer'};">◀</span>
-            <div>
-                <h3 style="margin: 0; font-size: 18px; font-weight: bold;">Matchweek {current_matchweek}</h3>
-                <p style="margin: 0; font-size: 11px; opacity: 0.8;">{min_date} - {max_date}</p>
-            </div>
-            <span style="font-size: 20px; color: {'#666' if current_index <= 0 else '#333'}; cursor: {'default' if current_index <= 0 else 'pointer'};">▶</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # Matchweek navigation header with proper inline buttons
+    col1, col2, col3 = st.columns([1, 6, 1])
     
-    # Navigation buttons in columns positioned over the header
-    col1, col2, col3, col4, col5 = st.columns([2, 1, 2, 1, 2])
-    
-    with col2:
+    with col1:
         if current_index < len(available_matchweeks) - 1:
             if st.button("◀", key="prev_week", help="Previous matchweek"):
                 st.session_state.current_matchweek = available_matchweeks[current_index + 1]
                 st.rerun()
+        else:
+            st.markdown("<div style='text-align: center; color: #ccc; font-size: 24px; line-height: 50px;'>◀</div>", unsafe_allow_html=True)
     
-    with col4:
+    with col2:
+        st.markdown(f"""
+        <div style="background: #87CEEB; 
+                    color: #333; 
+                    padding: 8px 0; 
+                    border-radius: 5px; 
+                    margin: 10px 0;
+                    text-align: center;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <h3 style="margin: 0; font-size: 18px; font-weight: bold;">Matchweek {current_matchweek}</h3>
+            <p style="margin: 0; font-size: 11px; opacity: 0.8;">{min_date} - {max_date}</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
         if current_index > 0:
             if st.button("▶", key="next_week", help="Next matchweek"):
                 st.session_state.current_matchweek = available_matchweeks[current_index - 1]
                 st.rerun()
-    
-    # Custom CSS to position buttons over the header
-    st.markdown("""
-    <style>
-    div[data-testid="column"]:nth-child(2) button,
-    div[data-testid="column"]:nth-child(4) button {
-        background: transparent !important;
-        border: none !important;
-        color: #333 !important;
-        font-size: 20px !important;
-        padding: 5px 10px !important;
-        margin-top: -60px !important;
-        position: relative !important;
-        z-index: 10 !important;
-    }
-    div[data-testid="column"]:nth-child(2) button:hover,
-    div[data-testid="column"]:nth-child(4) button:hover {
-        background: rgba(255,255,255,0.2) !important;
-        border-radius: 3px !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+        else:
+            st.markdown("<div style='text-align: center; color: #ccc; font-size: 24px; line-height: 50px;'>▶</div>", unsafe_allow_html=True)
     
     # Sort matches within the week by kickoff time
     current_week_matches.sort(key=lambda x: x["kickoff"])
@@ -269,7 +284,6 @@ def main():
     # Display each match
     for match in current_week_matches:
         format_match_display(match)
-        st.markdown("<hr style='margin: 10px 0; border: 1px solid #eee;'>", unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
