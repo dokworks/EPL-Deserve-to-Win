@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 from datetime import datetime
 from collections import defaultdict
+import pytz
 
 # Page config
 st.set_page_config(
@@ -38,10 +39,16 @@ def format_match_display(match):
     home_team = match["homeTeam"]
     away_team = match["awayTeam"]
     
-    # Format the kickoff time
-    kickoff = datetime.strptime(match["kickoff"], "%Y-%m-%d %H:%M:%S")
-    formatted_date = kickoff.strftime("%a %d %b")
-    formatted_time = kickoff.strftime("%H:%M")
+    # Parse the kickoff time and convert to local timezone
+    kickoff_utc = datetime.strptime(match["kickoff"], "%Y-%m-%d %H:%M:%S")
+    # The API returns BST time, so we need to handle timezone properly
+    bst = pytz.timezone('Europe/London')
+    kickoff_bst = bst.localize(kickoff_utc)
+    
+    # Display in local timezone using JavaScript for browser timezone detection
+    formatted_date = kickoff_bst.strftime("%a %d %b")
+    formatted_time = kickoff_bst.strftime("%H:%M")
+    iso_time = kickoff_bst.isoformat()
     
     # Team logos
     home_logo_url = f"https://resources.premierleague.com/premierleague25/badges/{home_team['id']}.svg"
@@ -81,11 +88,27 @@ def format_match_display(match):
         </div>
         """, unsafe_allow_html=True)
     
-    # Additional match info
+    # Additional match info with JavaScript for local time conversion
     st.markdown(f"""
     <div style="text-align: center; margin-top: 5px; color: gray; font-size: 12px;">
-        {formatted_date} • {formatted_time} • {match['ground']} • {match['period']}
+        <span id="date-{match['matchId']}">{formatted_date}</span> • 
+        <span id="time-{match['matchId']}">{formatted_time}</span> • 
+        {match['ground']} • {match['period']}
     </div>
+    <script>
+        (function() {{
+            var isoTime = "{iso_time}";
+            var localDate = new Date(isoTime);
+            var options = {{ weekday: 'short', day: '2-digit', month: 'short' }};
+            var timeOptions = {{ hour: '2-digit', minute: '2-digit', hour12: false }};
+            
+            var dateElement = document.getElementById('date-{match['matchId']}');
+            var timeElement = document.getElementById('time-{match['matchId']}');
+            
+            if (dateElement) dateElement.textContent = localDate.toLocaleDateString('en-GB', options);
+            if (timeElement) timeElement.textContent = localDate.toLocaleTimeString('en-GB', timeOptions);
+        }})();
+    </script>
     """, unsafe_allow_html=True)
 
 def main():
@@ -109,8 +132,8 @@ def main():
     for match in completed_matches:
         matches_by_week[match["matchWeek"]].append(match)
     
-    # Sort matchweeks
-    sorted_weeks = sorted(matches_by_week.keys())
+    # Sort matchweeks in descending order (most current first)
+    sorted_weeks = sorted(matches_by_week.keys(), reverse=True)
     
     # Display matches by matchweek
     for week in sorted_weeks:
