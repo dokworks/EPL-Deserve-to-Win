@@ -248,8 +248,7 @@ def format_match_display(match):
     st.markdown(f"<div style='text-align: center; margin-top: 2px; color: gray; font-size: 11px;'>"
                 f"{formatted_date} • {formatted_time} • {match['ground']} • {match['period']}"
                 f"</div>", unsafe_allow_html=True)
-    if st.button("View Stats", key=f"view_{match_id}"):
-        st.session_state.selected_match_id = match_id
+    # Removed the View Stats button from here
 
 def main():
     # Season selector
