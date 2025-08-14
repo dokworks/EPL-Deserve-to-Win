@@ -139,7 +139,7 @@ def get_available_matchweeks(matches):
     return sorted(matchweeks, reverse=True)  # Most recent first
 
 def format_match_display(match):
-    """Format a single match for display using Streamlit columns only"""
+    """Format a single match for display using Streamlit columns only, with smaller fonts and centered score"""
     home_team = match["homeTeam"]
     away_team = match["awayTeam"]
     kickoff_utc = datetime.strptime(match["kickoff"], "%Y-%m-%d %H:%M:%S")
@@ -149,26 +149,23 @@ def format_match_display(match):
     formatted_time = kickoff_bst.strftime("%H:%M")
     home_logo_url = f"https://resources.premierleague.com/premierleague25/badges/{home_team['id']}.svg"
     away_logo_url = f"https://resources.premierleague.com/premierleague25/badges/{away_team['id']}.svg"
+    score_text = f"{home_team['score'] if match['period']=='FullTime' else '-'} - {away_team['score'] if match['period']=='FullTime' else '-'}"
 
-    # Use columns for layout, which is mobile-friendly in Streamlit
-    cols = st.columns([2, 1, 1, 1, 2])
+    # Use columns for layout, mobile-friendly
+    cols = st.columns([2, 1, 2])
     with cols[0]:
         st.markdown(f"<div style='display: flex; align-items: center; justify-content: flex-end;'>"
-                    f"<span style='margin-right: 10px; font-weight: bold;'>{home_team['name']}</span>"
-                    f"<img src='{home_logo_url}' width='30' height='30' style='margin-right: 5px;'>"
+                    f"<span style='margin-right: 6px; font-weight: 500; font-size: 13px;'>{home_team['name']}</span>"
+                    f"<img src='{home_logo_url}' width='22' height='22' style='margin-right: 4px;'>"
                     f"</div>", unsafe_allow_html=True)
     with cols[1]:
-        st.markdown(f"<div style='text-align: center; font-size: 24px; font-weight: bold;'>{home_team['score'] if match['period']=='FullTime' else '-'}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: center; font-size: 16px; font-weight: 600;'>{score_text}</div>", unsafe_allow_html=True)
     with cols[2]:
-        st.markdown("<div style='text-align: center; font-size: 20px;'>-</div>", unsafe_allow_html=True)
-    with cols[3]:
-        st.markdown(f"<div style='text-align: center; font-size: 24px; font-weight: bold;'>{away_team['score'] if match['period']=='FullTime' else '-'}</div>", unsafe_allow_html=True)
-    with cols[4]:
         st.markdown(f"<div style='display: flex; align-items: center;'>"
-                    f"<img src='{away_logo_url}' width='30' height='30' style='margin-right: 10px;'>"
-                    f"<span style='font-weight: bold;'>{away_team['name']}</span>"
+                    f"<img src='{away_logo_url}' width='22' height='22' style='margin-right: 4px;'>"
+                    f"<span style='font-weight: 500; font-size: 13px;'>{away_team['name']}</span>"
                     f"</div>", unsafe_allow_html=True)
-    st.markdown(f"<div style='text-align: center; margin-top: 5px; color: gray; font-size: 12px;'>"
+    st.markdown(f"<div style='text-align: center; margin-top: 2px; color: gray; font-size: 11px;'>"
                 f"{formatted_date} • {formatted_time} • {match['ground']} • {match['period']}"
                 f"</div>", unsafe_allow_html=True)
 
