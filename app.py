@@ -139,72 +139,38 @@ def get_available_matchweeks(matches):
     return sorted(matchweeks, reverse=True)  # Most recent first
 
 def format_match_display(match):
-    """Format a single match for display"""
+    """Format a single match for display using Streamlit columns only"""
     home_team = match["homeTeam"]
     away_team = match["awayTeam"]
-    
-    # Parse the kickoff time and convert to local timezone
     kickoff_utc = datetime.strptime(match["kickoff"], "%Y-%m-%d %H:%M:%S")
-    # The API returns BST time, so we need to handle timezone properly
     bst = pytz.timezone('Europe/London')
     kickoff_bst = bst.localize(kickoff_utc)
-    
-    # Display in local timezone using JavaScript for browser timezone detection
     formatted_date = kickoff_bst.strftime("%a %d %b")
     formatted_time = kickoff_bst.strftime("%H:%M")
-    iso_time = kickoff_bst.isoformat()
-    
-    # Team logos
     home_logo_url = f"https://resources.premierleague.com/premierleague25/badges/{home_team['id']}.svg"
     away_logo_url = f"https://resources.premierleague.com/premierleague25/badges/{away_team['id']}.svg"
-    
-    # Mobile-responsive match display
-    st.markdown(f"""
-    <div class="match-container" style="background: #f8f9fa; border-radius: 8px; padding: 15px; margin: 10px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <div class="match-row" style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap;">
-            <div style="display: flex; align-items: center; margin: 5px;">
-                <span class="team-name" style="margin-right: 8px; font-weight: bold; text-align: right; min-width: 120px;">{home_team['name']}</span>
-                <img src="{home_logo_url}" width="25" height="25" style="margin: 0 5px;">
-            </div>
-            
-            <div style="display: flex; align-items: center; margin: 5px 15px;">
-                <span class="score" style="font-size: 20px; font-weight: bold; margin: 0 8px;">
-                    {home_team['score'] if match["period"] == "FullTime" else '-'}
-                </span>
-                <span style="font-size: 16px; margin: 0 5px;">-</span>
-                <span class="score" style="font-size: 20px; font-weight: bold; margin: 0 8px;">
-                    {away_team['score'] if match["period"] == "FullTime" else '-'}
-                </span>
-            </div>
-            
-            <div style="display: flex; align-items: center; margin: 5px;">
-                <img src="{away_logo_url}" width="25" height="25" style="margin: 0 5px;">
-                <span class="team-name" style="margin-left: 8px; font-weight: bold; text-align: left; min-width: 120px;">{away_team['name']}</span>
-            </div>
-        </div>
-        
-        <div class="match-info" style="text-align: center; margin-top: 8px; color: gray; font-size: 11px;">
-            <span id="date-{match['matchId']}">{formatted_date}</span> • 
-            <span id="time-{match['matchId']}">{formatted_time}</span> • 
-            {match['ground']} • {match['period']}
-        </div>
-    </div>
-    
-    <script>
-        (function() {{
-            var isoTime = "{iso_time}";
-            var localDate = new Date(isoTime);
-            var options = {{ weekday: 'short', day: '2-digit', month: 'short' }};
-            var timeOptions = {{ hour: '2-digit', minute: '2-digit', hour12: false }};
-            
-            var dateElement = document.getElementById('date-{match['matchId']}');
-            var timeElement = document.getElementById('time-{match['matchId']}');
-            
-            if (dateElement) dateElement.textContent = localDate.toLocaleDateString('en-GB', options);
-            if (timeElement) timeElement.textContent = localDate.toLocaleTimeString('en-GB', timeOptions);
-        }})();
-    </script>
-    """, unsafe_allow_html=True)
+
+    # Use columns for layout, which is mobile-friendly in Streamlit
+    cols = st.columns([2, 1, 1, 1, 2])
+    with cols[0]:
+        st.markdown(f"<div style='display: flex; align-items: center; justify-content: flex-end;'>"
+                    f"<span style='margin-right: 10px; font-weight: bold;'>{home_team['name']}</span>"
+                    f"<img src='{home_logo_url}' width='30' height='30' style='margin-right: 5px;'>"
+                    f"</div>", unsafe_allow_html=True)
+    with cols[1]:
+        st.markdown(f"<div style='text-align: center; font-size: 24px; font-weight: bold;'>{home_team['score'] if match['period']=='FullTime' else '-'}</div>", unsafe_allow_html=True)
+    with cols[2]:
+        st.markdown("<div style='text-align: center; font-size: 20px;'>-</div>", unsafe_allow_html=True)
+    with cols[3]:
+        st.markdown(f"<div style='text-align: center; font-size: 24px; font-weight: bold;'>{away_team['score'] if match['period']=='FullTime' else '-'}</div>", unsafe_allow_html=True)
+    with cols[4]:
+        st.markdown(f"<div style='display: flex; align-items: center;'>"
+                    f"<img src='{away_logo_url}' width='30' height='30' style='margin-right: 10px;'>"
+                    f"<span style='font-weight: bold;'>{away_team['name']}</span>"
+                    f"</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='text-align: center; margin-top: 5px; color: gray; font-size: 12px;'>"
+                f"{formatted_date} • {formatted_time} • {match['ground']} • {match['period']}"
+                f"</div>", unsafe_allow_html=True)
 
 def main():
     # Season selector
