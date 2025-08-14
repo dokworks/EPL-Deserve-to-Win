@@ -181,14 +181,14 @@ def show_match_stats(match):
     </div>
     """, unsafe_allow_html=True)
     st.markdown("<h4 style='margin-top: 0;'>Top Stats</h4>", unsafe_allow_html=True)
-    # Stat rows
+    # Stat rows (order and keys updated)
     stat_rows = [
-        ("Possession (%)", home_stats.get('possession', '-'), away_stats.get('possession', '-'), False),
         ("xG", home_stats.get('expectedGoals', '-'), away_stats.get('expectedGoals', '-'), True),
         ("Total Shots", home_stats.get('totalScoringAtt', '-'), away_stats.get('totalScoringAtt', '-'), False),
         ("Shots On Target", home_stats.get('ontargetScoringAtt', '-'), away_stats.get('ontargetScoringAtt', '-'), False),
+        ("Possession (%)", home_stats.get('possessionPercentage', '-'), away_stats.get('possessionPercentage', '-'), False),
         ("Passes", home_stats.get('totalPass', '-'), away_stats.get('totalPass', '-'), False),
-        ("Corners", home_stats.get('corners', '-'), away_stats.get('corners', '-'), False),
+        ("Corners", home_stats.get('cornerTaken', '-'), away_stats.get('cornerTaken', '-'), False),
         ("Saves", home_stats.get('saves', '-'), away_stats.get('saves', '-'), False),
         ("Big Chances", home_stats.get('bigChanceCreated', '-'), away_stats.get('bigChanceCreated', '-'), False),
     ]
@@ -208,10 +208,13 @@ def show_match_stats(match):
             a_val_disp = away_val
         # Bold the higher value
         if h_val_disp != '-' and a_val_disp != '-':
-            if float(h_val_disp) > float(a_val_disp):
-                h_val_disp = f"<b>{h_val_disp}</b>"
-            elif float(a_val_disp) > float(h_val_disp):
-                a_val_disp = f"<b>{a_val_disp}</b>"
+            try:
+                if float(h_val_disp) > float(a_val_disp):
+                    h_val_disp = f"<b>{h_val_disp}</b>"
+                elif float(a_val_disp) > float(h_val_disp):
+                    a_val_disp = f"<b>{a_val_disp}</b>"
+            except:
+                pass
         st.markdown(f"""
         <div style='display: flex; justify-content: space-between; align-items: center; font-size: 15px; margin: 4px 0;'>
             <span style='color: #000;'>{h_val_disp}</span>
