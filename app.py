@@ -152,10 +152,15 @@ def fetch_match_stats(match_id):
 def show_match_stats(match):
     match_id = match.get("matchId")
     stats_data = fetch_match_stats(match_id)
-    if not stats_data:
+    if not stats_data or not isinstance(stats_data, list):
         st.error("No stats available for this match.")
         return
-
+    # Parse home/away stats from list
+    home_stats = next((item['stats'] for item in stats_data if item.get('side') == 'Home'), {})
+    away_stats = next((item['stats'] for item in stats_data if item.get('side') == 'Away'), {})
+    if not home_stats or not away_stats:
+        st.error("Stats data format error.")
+        return
     home_team = match["homeTeam"]
     away_team = match["awayTeam"]
     home_logo_url = f"https://resources.premierleague.com/premierleague25/badges/{home_team['id']}.svg"
@@ -179,9 +184,9 @@ def show_match_stats(match):
 
     # Key stats (example: Possession, XG, Shots, Passes, etc.)
     st.markdown("<h4 style='margin-top: 0;'>Top Stats</h4>", unsafe_allow_html=True)
+    home_poss = home_stats.get('possession', 0)
+    away_poss = away_stats.get('possession', 0)
     # Possession bar
-    home_poss = stats_data.get('home', {}).get('possession', 0)
-    away_poss = stats_data.get('away', {}).get('possession', 0)
     st.markdown(f"""
     <div style='display: flex; align-items: center; width: 100%;'>
         <div style='width: {home_poss}%; background: #ffd600; color: #37003c; text-align: left; padding: 2px 8px; font-weight: 600;'>{home_poss}%</div>
@@ -195,13 +200,13 @@ def show_match_stats(match):
 
     # Stat rows (example, can be expanded)
     stat_rows = [
-        ("XG", stats_data.get('home', {}).get('xg', '-'), stats_data.get('away', {}).get('xg', '-')),
-        ("Total Shots", stats_data.get('home', {}).get('shots', '-'), stats_data.get('away', {}).get('shots', '-')),
-        ("Shots On Target", stats_data.get('home', {}).get('shotsOnTarget', '-'), stats_data.get('away', {}).get('shotsOnTarget', '-')),
-        ("Passes", stats_data.get('home', {}).get('passes', '-'), stats_data.get('away', {}).get('passes', '-')),
-        ("Corners", stats_data.get('home', {}).get('corners', '-'), stats_data.get('away', {}).get('corners', '-')),
-        ("Saves", stats_data.get('home', {}).get('saves', '-'), stats_data.get('away', {}).get('saves', '-')),
-        ("Big Chances", stats_data.get('home', {}).get('bigChances', '-'), stats_data.get('away', {}).get('bigChances', '-')),
+        ("XG", home_stats.get('expectedGoals', '-'), away_stats.get('expectedGoals', '-')),
+        ("Total Shots", home_stats.get('totalScoringAtt', '-'), away_stats.get('totalScoringAtt', '-')),
+        ("Shots On Target", home_stats.get('ontargetScoringAtt', '-'), away_stats.get('ontargetScoringAtt', '-')),
+        ("Passes", home_stats.get('totalPass', '-'), away_stats.get('totalPass', '-')),
+        ("Corners", home_stats.get('corners', '-'), away_stats.get('corners', '-')),
+        ("Saves", home_stats.get('saves', '-'), away_stats.get('saves', '-')),
+        ("Big Chances", home_stats.get('bigChanceCreated', '-'), away_stats.get('bigChanceCreated', '-')),
     ]
     for stat, home_val, away_val in stat_rows:
         st.markdown(f"""
@@ -251,6 +256,12 @@ def format_match_display(match):
     # Removed the View Stats button from here
 
 def main():
+    # Show stats page if selected
+    if st.session_state.get("show_stats") and st.session_state.get("selected_match"):
+        st.empty()  # Clear previous content
+        show_match_stats(st.session_state.selected_match)
+        return
+    
     # Season selector
     available_seasons = get_available_seasons()
     selected_season = st.selectbox(
@@ -333,12 +344,6 @@ def main():
             st.session_state.selected_match = match
             st.session_state.show_stats = True
             st.rerun()
-
-    # Show stats page if selected
-    if st.session_state.get("show_stats") and st.session_state.get("selected_match"):
-        st.empty()  # Clear previous content
-        show_match_stats(st.session_state.selected_match)
-        return
 
 if __name__ == "__main__":
     main()
