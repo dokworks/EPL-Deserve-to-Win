@@ -166,7 +166,6 @@ def show_match_stats(match):
     home_logo_url = f"https://resources.premierleague.com/premierleague25/badges/{home_team['id']}.svg"
     away_logo_url = f"https://resources.premierleague.com/premierleague25/badges/{away_team['id']}.svg"
     score_text = f"{home_team['score']} - {away_team['score']}"
-
     # Header with logos, names, score
     st.markdown(f"""
     <div style='display: flex; align-items: center; justify-content: center; gap: 32px; margin-bottom: 18px;'>
@@ -181,42 +180,45 @@ def show_match_stats(match):
         </div>
     </div>
     """, unsafe_allow_html=True)
-
-    # Key stats (example: Possession, XG, Shots, Passes, etc.)
     st.markdown("<h4 style='margin-top: 0;'>Top Stats</h4>", unsafe_allow_html=True)
-    home_poss = home_stats.get('possession', 0)
-    away_poss = away_stats.get('possession', 0)
-    # Possession bar
-    st.markdown(f"""
-    <div style='display: flex; align-items: center; width: 100%;'>
-        <div style='width: {home_poss}%; background: #ffd600; color: #37003c; text-align: left; padding: 2px 8px; font-weight: 600;'>{home_poss}%</div>
-        <div style='width: {away_poss}%; background: #d60000; color: #fff; text-align: right; padding: 2px 8px; font-weight: 600;'>{away_poss}%</div>
-    </div>
-    <div style='display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;'>
-        <span style='color: #37003c;'>Possession</span>
-        <span style='color: #37003c;'>Possession</span>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Stat rows (example, can be expanded)
+    # Stat rows
     stat_rows = [
-        ("XG", home_stats.get('expectedGoals', '-'), away_stats.get('expectedGoals', '-')),
-        ("Total Shots", home_stats.get('totalScoringAtt', '-'), away_stats.get('totalScoringAtt', '-')),
-        ("Shots On Target", home_stats.get('ontargetScoringAtt', '-'), away_stats.get('ontargetScoringAtt', '-')),
-        ("Passes", home_stats.get('totalPass', '-'), away_stats.get('totalPass', '-')),
-        ("Corners", home_stats.get('corners', '-'), away_stats.get('corners', '-')),
-        ("Saves", home_stats.get('saves', '-'), away_stats.get('saves', '-')),
-        ("Big Chances", home_stats.get('bigChanceCreated', '-'), away_stats.get('bigChanceCreated', '-')),
+        ("Possession (%)", home_stats.get('possession', '-'), away_stats.get('possession', '-'), False),
+        ("xG", home_stats.get('expectedGoals', '-'), away_stats.get('expectedGoals', '-'), True),
+        ("Total Shots", home_stats.get('totalScoringAtt', '-'), away_stats.get('totalScoringAtt', '-'), False),
+        ("Shots On Target", home_stats.get('ontargetScoringAtt', '-'), away_stats.get('ontargetScoringAtt', '-'), False),
+        ("Passes", home_stats.get('totalPass', '-'), away_stats.get('totalPass', '-'), False),
+        ("Corners", home_stats.get('corners', '-'), away_stats.get('corners', '-'), False),
+        ("Saves", home_stats.get('saves', '-'), away_stats.get('saves', '-'), False),
+        ("Big Chances", home_stats.get('bigChanceCreated', '-'), away_stats.get('bigChanceCreated', '-'), False),
     ]
-    for stat, home_val, away_val in stat_rows:
+    for stat, home_val, away_val, is_float in stat_rows:
+        # Format values
+        try:
+            h_val = float(home_val)
+            a_val = float(away_val)
+            if not is_float:
+                h_val_disp = str(int(round(h_val)))
+                a_val_disp = str(int(round(a_val)))
+            else:
+                h_val_disp = f"{h_val:.2f}"
+                a_val_disp = f"{a_val:.2f}"
+        except:
+            h_val_disp = home_val
+            a_val_disp = away_val
+        # Bold the higher value
+        if h_val_disp != '-' and a_val_disp != '-':
+            if float(h_val_disp) > float(a_val_disp):
+                h_val_disp = f"<b>{h_val_disp}</b>"
+            elif float(a_val_disp) > float(h_val_disp):
+                a_val_disp = f"<b>{a_val_disp}</b>"
         st.markdown(f"""
         <div style='display: flex; justify-content: space-between; align-items: center; font-size: 15px; margin: 4px 0;'>
-            <span style='color: #ffd600; font-weight: 600;'>{home_val}</span>
-            <span style='color: #37003c; font-weight: 500;'>{stat}</span>
-            <span style='color: #d60000; font-weight: 600;'>{away_val}</span>
+            <span style='color: #000;'>{h_val_disp}</span>
+            <span style='color: #000; font-weight: 500;'>{stat}</span>
+            <span style='color: #000;'>{a_val_disp}</span>
         </div>
         """, unsafe_allow_html=True)
-
     # Back button
     if st.button("Back to Fixtures", key="back_to_fixtures"):
         st.session_state.show_stats = False
