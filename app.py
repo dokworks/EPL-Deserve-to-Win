@@ -138,6 +138,85 @@ def get_available_matchweeks(matches):
         matchweeks.add(match["matchWeek"])
     return sorted(matchweeks, reverse=True)  # Most recent first
 
+def fetch_match_stats(match_id):
+    """Fetch match stats from the API"""
+    url = f"https://sdp-prem-prod.premier-league-prod.pulselive.com/api/v3/matches/{match_id}/stats"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        st.error(f"Error fetching match stats: {e}")
+        return None
+
+def show_match_stats(match):
+    match_id = match["id"]
+    stats_data = fetch_match_stats(match_id)
+    if not stats_data:
+        st.error("No stats available for this match.")
+        return
+
+    home_team = match["homeTeam"]
+    away_team = match["awayTeam"]
+    home_logo_url = f"https://resources.premierleague.com/premierleague25/badges/{home_team['id']}.svg"
+    away_logo_url = f"https://resources.premierleague.com/premierleague25/badges/{away_team['id']}.svg"
+    score_text = f"{home_team['score']} - {away_team['score']}"
+
+    # Header with logos, names, score
+    st.markdown(f"""
+    <div style='display: flex; align-items: center; justify-content: center; gap: 32px; margin-bottom: 18px;'>
+        <div style='text-align: right;'>
+            <img src='{home_logo_url}' width='40' style='vertical-align: middle;'>
+            <span style='font-weight: 600; font-size: 18px; margin-left: 8px;'>{home_team['name']}</span>
+        </div>
+        <div style='font-size: 28px; font-weight: bold; color: #37003c;'>{score_text}</div>
+        <div style='text-align: left;'>
+            <span style='font-weight: 600; font-size: 18px; margin-right: 8px;'>{away_team['name']}</span>
+            <img src='{away_logo_url}' width='40' style='vertical-align: middle;'>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Key stats (example: Possession, XG, Shots, Passes, etc.)
+    st.markdown("<h4 style='margin-top: 0;'>Top Stats</h4>", unsafe_allow_html=True)
+    # Possession bar
+    home_poss = stats_data.get('home', {}).get('possession', 0)
+    away_poss = stats_data.get('away', {}).get('possession', 0)
+    st.markdown(f"""
+    <div style='display: flex; align-items: center; width: 100%;'>
+        <div style='width: {home_poss}%; background: #ffd600; color: #37003c; text-align: left; padding: 2px 8px; font-weight: 600;'>{home_poss}%</div>
+        <div style='width: {away_poss}%; background: #d60000; color: #fff; text-align: right; padding: 2px 8px; font-weight: 600;'>{away_poss}%</div>
+    </div>
+    <div style='display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;'>
+        <span style='color: #37003c;'>Possession</span>
+        <span style='color: #37003c;'>Possession</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Stat rows (example, can be expanded)
+    stat_rows = [
+        ("XG", stats_data.get('home', {}).get('xg', '-'), stats_data.get('away', {}).get('xg', '-')),
+        ("Total Shots", stats_data.get('home', {}).get('shots', '-'), stats_data.get('away', {}).get('shots', '-')),
+        ("Shots On Target", stats_data.get('home', {}).get('shotsOnTarget', '-'), stats_data.get('away', {}).get('shotsOnTarget', '-')),
+        ("Passes", stats_data.get('home', {}).get('passes', '-'), stats_data.get('away', {}).get('passes', '-')),
+        ("Corners", stats_data.get('home', {}).get('corners', '-'), stats_data.get('away', {}).get('corners', '-')),
+        ("Saves", stats_data.get('home', {}).get('saves', '-'), stats_data.get('away', {}).get('saves', '-')),
+        ("Big Chances", stats_data.get('home', {}).get('bigChances', '-'), stats_data.get('away', {}).get('bigChances', '-')),
+    ]
+    for stat, home_val, away_val in stat_rows:
+        st.markdown(f"""
+        <div style='display: flex; justify-content: space-between; align-items: center; font-size: 15px; margin: 4px 0;'>
+            <span style='color: #ffd600; font-weight: 600;'>{home_val}</span>
+            <span style='color: #37003c; font-weight: 500;'>{stat}</span>
+            <span style='color: #d60000; font-weight: 600;'>{away_val}</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Back button
+    if st.button("Back to Fixtures", key="back_to_fixtures"):
+        st.session_state.show_stats = False
+        st.rerun()
+
 def format_match_display(match):
     """Format a single match for display using Streamlit columns only, with smaller fonts and centered score"""
     home_team = match["homeTeam"]
@@ -150,6 +229,7 @@ def format_match_display(match):
     home_logo_url = f"https://resources.premierleague.com/premierleague25/badges/{home_team['id']}.svg"
     away_logo_url = f"https://resources.premierleague.com/premierleague25/badges/{away_team['id']}.svg"
     score_text = f"{home_team['score'] if match['period']=='FullTime' else '-'} - {away_team['score'] if match['period']=='FullTime' else '-'}"
+    match_id = match.get("matchId")
 
     # Use columns for layout, mobile-friendly
     cols = st.columns([2, 1, 2])
@@ -168,6 +248,8 @@ def format_match_display(match):
     st.markdown(f"<div style='text-align: center; margin-top: 2px; color: gray; font-size: 11px;'>"
                 f"{formatted_date} • {formatted_time} • {match['ground']} • {match['period']}"
                 f"</div>", unsafe_allow_html=True)
+    if st.button("View Stats", key=f"view_{match_id}"):
+        st.session_state.selected_match_id = match_id
 
 def main():
     # Season selector
@@ -247,6 +329,16 @@ def main():
     # Display each match
     for match in current_week_matches:
         format_match_display(match)
+        if st.button(f"View Stats", key=f"stats_{match['id']}"):
+            st.session_state.selected_match = match
+            st.session_state.show_stats = True
+            st.rerun()
+
+    # Show stats page if selected
+    if st.session_state.get("show_stats") and st.session_state.get("selected_match"):
+        st.empty()  # Clear previous content
+        show_match_stats(st.session_state.selected_match)
+        return
 
 if __name__ == "__main__":
     main()
